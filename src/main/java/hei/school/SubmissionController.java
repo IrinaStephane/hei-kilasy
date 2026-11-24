@@ -29,6 +29,9 @@ public class SubmissionController {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Autowired
+    private KilasyApplication.SmsSender smsSender;
+
     @PostMapping("/exercises/{id}/submissions")
     public ResponseEntity<?> submit(@PathVariable long id, @RequestBody Map<String, Object> body) {
         if (body.get("studentId") == null) {
@@ -157,6 +160,17 @@ public class SubmissionController {
         message.setText(text);
         mailSender.send(message);
         System.out.println("Email de note envoyé à " + row.get("email"));
+
+        // notify the student by SMS; the grade is already saved, so a failure must not cancel it
+        String phone = (String) row.get("phone");
+        if (phone != null && !phone.isBlank()) {
+            try {
+                smsSender.send(phone, "Votre note pour « " + title + " » est disponible : "
+                        + grade.toPlainString().replace('.', ',') + "/20.");
+            } catch (Exception ex) {
+                System.out.println("Échec de l'envoi du SMS à " + phone + " : " + ex.getMessage());
+            }
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("id", id);
