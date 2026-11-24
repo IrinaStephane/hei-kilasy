@@ -40,3 +40,16 @@ CREATE TABLE IF NOT EXISTS submission
     graded_at    TIMESTAMP,
     UNIQUE (exercise_id, student_id)
 );
+
+-- Timed exercises (C3): a duration in minutes, in addition to or instead of the deadline
+ALTER TABLE exercise ADD COLUMN IF NOT EXISTS duration_minutes INTEGER;
+ALTER TABLE exercise ALTER COLUMN deadline DROP NOT NULL;
+
+-- When a student opened a timed exercise (POST /exercises/{id}/start)
+CREATE TABLE IF NOT EXISTS exercise_start
+(
+    exercise_id BIGINT    NOT NULL REFERENCES exercise (id),
+    student_id  BIGINT    NOT NULL REFERENCES student (id),
+    started_at  TIMESTAMP NOT NULL,
+    PRIMARY KEY (exercise_id, student_id)
+);
